@@ -4,30 +4,19 @@ import tensorflow as tf
 from PIL import Image
 import subprocess
 import sys
-import os
-from huggingface_hub import HfApi
+from huggingface_hub import hf_hub_download
 
 # Config
 st.set_page_config(page_title="🧠 Emotion Detector", page_icon="🧠", layout="centered")
+
 # Styling
 st.markdown("""
     <style>
-    .main {
-        background-color: #f9f9f9;
-    }
     .stButton > button {
         width: 100%;
         padding: 0.8em 1.2em;
         font-size: 1.1em;
         border-radius: 10px;
-    }
-    .option-btn {
-        background-color: #0066cc;
-        color: white;
-    }
-    .upload-btn {
-        background-color: #28a745;
-        color: white;
     }
     .title {
         font-size: 2.4em;
@@ -49,26 +38,15 @@ st.markdown("""
 st.markdown('<div class="title">🧠 Real-Time Facial Emotion Recognition</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Choose an option below to predict emotions from facial images</div>', unsafe_allow_html=True)
 
-# Hugging Face upload logic
-def upload_model_to_huggingface():
-    token = "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"  # ⚠️ TEMP use only!
-    try:
-        api = HfApi(token=token)
-        api.upload_folder(
-            folder_path=".",
-            repo_id="Amirsoltani21/emotion-detection",
-            repo_type="model",
-            allow_patterns=["model.h5"]
-        )
-        st.success("✅ Model uploaded to Hugging Face successfully!")
-    except Exception as e:
-        st.error(f"Upload failed: {e}")
-
-
-# Load model
+# ✅ Load model from Hugging Face
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("model.h5")
+    model_path = hf_hub_download(
+        repo_id="Amirsoltani21/emotion-detection",
+        filename="model.h5",
+        repo_type="model"
+    )
+    return tf.keras.models.load_model(model_path)
 
 model = load_model()
 
@@ -91,9 +69,8 @@ def preprocess_image(image: Image.Image):
     image = np.expand_dims(image, axis=0)
     return image
 
-# Options layout
+# Layout
 st.markdown("### 🔍 Choose Your Detection Mode")
-
 col1, col2 = st.columns(2)
 
 # 🖼️ Upload Image
@@ -122,4 +99,4 @@ with col2:
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align:center; color: #aaa;'>Built by Amir Soltani · Powered by TensorFlow & Hugging Face</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color: #aaa;'>Built by Amir Soltani</p>", unsafe_allow_html=True)

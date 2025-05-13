@@ -2,9 +2,17 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from PIL import Image
+from huggingface_hub import hf_hub_download
 
-model = tf.keras.models.load_model("model.h5")
+# ✅ Load model from Hugging Face
+model_path = hf_hub_download(
+    repo_id="Amirsoltani21/emotion-detection",
+    filename="model.h5",
+    repo_type="model"
+)
+model = tf.keras.models.load_model(model_path)
 
+# Labels
 emotion_label_to_text = {
     0: 'anger',
     1: 'disgust',
@@ -15,8 +23,8 @@ emotion_label_to_text = {
     6: 'neutral'
 }
 
+# OpenCV face detection
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
 cap = cv2.VideoCapture(0)
 
 while True:
