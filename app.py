@@ -2,43 +2,72 @@ import streamlit as st
 import numpy as np
 import tensorflow as tf
 from PIL import Image
+from huggingface_hub import hf_hub_download
 import subprocess
 import sys
-from huggingface_hub import hf_hub_download
 
-# Config
-st.set_page_config(page_title="🧠 Emotion Detector", page_icon="🧠", layout="centered")
+# 🛠️ PAGE CONFIG
+st.set_page_config(page_title="EmotionLens™", page_icon="🧠", layout="wide")
 
-# Styling
+# 🎨 CUSTOM CSS
 st.markdown("""
     <style>
-    .stButton > button {
-        width: 100%;
-        padding: 0.8em 1.2em;
-        font-size: 1.1em;
-        border-radius: 10px;
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(to right, #e0f2fe, #f8fafc);
     }
+
     .title {
-        font-size: 2.4em;
-        font-weight: 700;
-        color: #333;
+        font-size: 3em;
+        font-weight: 800;
         text-align: center;
+        color: #111827;
         margin-bottom: 0.2em;
     }
+
     .subtitle {
-        font-size: 1.2em;
-        color: #666;
         text-align: center;
-        margin-bottom: 2em;
+        color: #6b7280;
+        font-size: 1.2em;
+        margin-bottom: 2.5em;
+    }
+
+    .glass-box {
+        background: rgba(255, 255, 255, 0.65);
+        border-radius: 20px;
+        padding: 2em;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    }
+
+    .stButton>button {
+        background-color: #3b82f6;
+        color: white;
+        padding: 0.7em 1.5em;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1em;
+        transition: 0.2s;
+    }
+
+    .stButton>button:hover {
+        background-color: #2563eb;
+    }
+
+    .footer {
+        text-align: center;
+        font-size: 0.9em;
+        color: #999;
+        margin-top: 4em;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Title
-st.markdown('<div class="title">🧠 Real-Time Facial Emotion Recognition</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Choose an option below to predict emotions from facial images</div>', unsafe_allow_html=True)
+# 🧠 TITLE
+st.markdown('<div class="title">EmotionLens™</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Upload a face image and discover what your expression says</div>', unsafe_allow_html=True)
 
-# ✅ Load model from Hugging Face
+# 🧬 LOAD MODEL
 @st.cache_resource
 def load_model():
     model_path = hf_hub_download(
@@ -50,53 +79,53 @@ def load_model():
 
 model = load_model()
 
-# Labels
+# 🔤 LABELS
 emotion_label_to_text = {
-    0: 'anger',
-    1: 'disgust',
-    2: 'fear',
-    3: 'happiness',
-    4: 'sadness',
-    5: 'surprise',
-    6: 'neutral'
+    0: 'Anger',
+    1: 'Disgust',
+    2: 'Fear',
+    3: 'Happiness',
+    4: 'Sadness',
+    5: 'Surprise',
+    6: 'Neutral'
 }
 
-# Preprocessing
+# 🧹 PREPROCESS
 def preprocess_image(image: Image.Image):
     image = image.convert("RGB")
     image = image.resize((48, 48))
     image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)
-    return image
+    return np.expand_dims(image, axis=0)
 
-# Layout
-st.markdown("### 🔍 Choose Your Detection Mode")
-col1, col2 = st.columns(2)
+# 📤 UPLOAD & DISPLAY
+st.markdown("### 📤 Upload Your Image")
+col1, col2 = st.columns([1.2, 2], gap="large")
 
-# 🖼️ Upload Image
 with col1:
-    st.markdown("#### 🖼️ Upload a Face Image")
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("Choose a facial image (jpg, png, jpeg)", type=["jpg", "jpeg", "png"])
     if uploaded_file:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="🖼️ Uploaded Image", use_column_width=True)
-        processed_img = preprocess_image(image)
-        prediction = model.predict(processed_img)[0]
-        predicted_label = emotion_label_to_text[np.argmax(prediction)]
+        img = Image.open(uploaded_file)
+        st.image(img, caption="🖼 Uploaded Image", use_column_width=True)
 
-        st.success(f"🎯 **Predicted Emotion:** {predicted_label.capitalize()}")
-
-        st.markdown("#### 📊 Prediction Probabilities")
-        for i, prob in enumerate(prediction):
-            st.progress(float(prob), text=f"{emotion_label_to_text[i].capitalize()} — {prob:.2%}")
-
-# 📸 Live Webcam
 with col2:
-    st.markdown("#### 📸 Launch Real-Time Detection")
-    if st.button("Start Webcam Detection 🚀"):
-        subprocess.Popen([sys.executable, "webcam_emotion.py"])
-        st.info("Live webcam launched in a new window. Press **Q** in the OpenCV window to close.")
+    if uploaded_file:
+        st.markdown('<div class="glass-box">', unsafe_allow_html=True)
+        processed = preprocess_image(img)
+        prediction = model.predict(processed)[0]
+        top_emotion = emotion_label_to_text[np.argmax(prediction)]
 
-# Footer
-st.markdown("---")
-st.markdown("<p style='text-align:center; color: #aaa;'>Built by Amir Soltani</p>", unsafe_allow_html=True)
+        st.success(f"🎯 **Detected Emotion:** {top_emotion}")
+        st.subheader("📊 Detailed Probabilities")
+        for i, prob in enumerate(prediction):
+            st.markdown(f"**{emotion_label_to_text[i]}**")
+            st.progress(float(prob))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# 🎥 WEBCAM LAUNCH
+st.markdown("### 🎥 Try Real-Time Detection")
+if st.button("Launch Webcam"):
+    subprocess.Popen([sys.executable, "webcam_emotion.py"])
+    st.info("Your webcam has started in a new window. Press Q to quit.")
+
+# 👣 FOOTER
+st.markdown('<div class="footer">Made with 💙 by Amir Soltani – EmotionLens™ 2025</div>', unsafe_allow_html=True)

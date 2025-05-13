@@ -6,3 +6,4 @@ numpy
 huggingface_hub
 uvicorn
 fastapi
+streamlit_lottie
